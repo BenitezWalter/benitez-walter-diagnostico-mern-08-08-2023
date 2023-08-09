@@ -33,47 +33,31 @@ ctrlTasks.getTasks = async (req, res) => {
   }
 };
 
-ctrlTasks.createTask = async (req, res) => {
-  const { name, description } = req.body;
-
-  try {
-    const newTask = new Task({
-      name,
-      description,
-    });
-    const taskSave = await newTask.save();
-
-    res.json({
-      msg: "Tarea guardada",
-      taskSave,
-    });
-  } catch (error) {
-    console.log(error);
-  }
-};
-
 ctrlTasks.updateTaskStatus = async (req, res) => {
-  const { taskId } = req.params;
-  const { isCompleted } = req.body;
+  const taskId = req.params.id;
 
   try {
+    const task = await Task.findById(taskId);
+
     const updatedTask = await Task.findByIdAndUpdate(
       taskId,
-      { isCompleted },
+      { $set: { isCompleted: !task.isCompleted } },
       { new: true }
     );
 
     if (!updatedTask) {
-      return res.status(404).json({ msg: "Task not found" });
+      res.json({
+        msg: "La tarea no se encontro",
+      });
     }
 
     res.json({
-      msg: "Task status updated",
+      msg: "Estado de la tarea actualizado",
       updatedTask,
     });
   } catch (error) {
+    res.json({ error: "Error en el servidor" });
     console.log(error);
-    res.status(500).json({ msg: "Server error" });
   }
 };
 
@@ -81,21 +65,19 @@ ctrlTasks.deleteTask = async (req, res) => {
   const taskId = req.params.id;
 
   try {
-    const deletedTask = await Task.findByIdAndDelete(taskId)
-    console.log(deletedTask)
-    console.log(req.params.id)
+    const deletedTask = await Task.findByIdAndDelete(taskId);
 
     if (!deletedTask) {
-      return res.status(404).json({ msg: "Task not found" });
+      return res.status(404).json({ msg: "Tarea no encontrada" });
     } else {
       res.json({
-        msg: "Task deleted",
+        msg: "Tarea eliminada",
         deletedTask,
       });
     }
   } catch (error) {
     console.log(error);
-    res.status(500).json({ msg: "Server error" });
+    res.status(500).json({ msg: "Error en el servidor" });
   }
 };
 

@@ -1,35 +1,42 @@
 import { useEffect, useState } from "react";
-import { deleteTaskRequest, getTasksRequest } from "./api/tasks";
-import "../src/index.css";
+import {
+  deleteTaskRequest,
+  getTasksRequest,
+  updateTaskStatusRequest,
+  createTaskRequest,
+} from "./api/tasks";
 
 function App() {
   const [tasks, setTasks] = useState([]);
+  const [name, setName] = useState();
+  const [description, setDescription] = useState();
 
-  const handleCheckboxChange = async (e, taskId) => {
-    const newTasks = tasks.map((task) =>
-      task._id === taskId ? { ...task, isCompleted: e.target.checked }:task
-    );
-
-    setTasks(newTasks);
-
-    try {
-      const response = await axios.post(`/api/updateTaskStatus/${taskId}`, {
-        isCompleted: e.target.checked,
-      });
-
-      if (response.status === 200) {
-      } else {
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      // Manejar errores si es necesario
-    }
-  };
   const handleDelete = async (id) => {
     try {
-      const response = await deleteTaskRequest(id);
-      console.log(response);
-      setTasks(tasks.filter((task) => task._id !== id));
+      await deleteTaskRequest(id);
+
+      const response = await getTasksRequest();
+      setTasks(response.data.tasks);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      await createTaskRequest(name, description);
+      const response = await getTasksRequest();
+      setTasks(response.data.tasks);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const toggleStatus = async (id) => {
+    try {
+      await updateTaskStatusRequest(id);
+      const response = await getTasksRequest();
+      setTasks(response.data.tasks);
     } catch (error) {
       console.log(error);
     }
@@ -44,30 +51,59 @@ function App() {
     loadTasks();
   }, []);
   return (
-    <>
-      <div>
+    <div className="container">
+      <div className="row">
         {tasks.map((value, index) => {
           return (
-            <div key={index} className="card-task">
-              <h1 className="card-task-title">{value.name}</h1>
-              <p className="card-task-description">{value.description}</p>
-              <div className="card-task-completed">
-                <label htmlFor="">
-                  Completada: <span>{value.isCompleted ? "Si" : "No"}</span>
-                </label>
-                <input
-                  type="checkbox"
-                  name="isCompleted"
-                  checked={value.isCompleted}
-                  onChange={(e) => handleCheckboxChange(e, value._id)}
-                />
+            <div className="col-lg-4 mt-4"key={index}>
+              <div className="card" >
+                <div key={index} className="card-body">
+                  <h2 className="card-title">{value.name}</h2>
+                  <p className="card-text">{value.description}</p>
+                  <div className="card-task-completed">
+                    <label htmlFor="">Completada:</label>
+                    <button
+                      onClick={() => toggleStatus(value._id)}
+                      className={
+                        value.isCompleted ? "btn btn-success mx-2" : "btn btn-danger mx-2"
+                      }
+                    >
+                      {value.isCompleted ? "Si ✅" : "No ✖"}
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => handleDelete(value._id)}
+                    className="btn btn-danger "
+                  >
+                    Borrar
+                  </button>
+                </div>
               </div>
-              <button onClick={()=>handleDelete(value._id)}>Borrar</button>
             </div>
           );
         })}
       </div>
-    </>
+
+      <div className="container d-flex justify-content-center mt-4">
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            name="nombre"
+            placeholder="Tarea de ejemplo"
+            onChange={(event) => setName(event.target.value)}
+            className="form-control mb-3"
+          />
+          <input
+            type="text"
+            name="description"
+            placeholder="Descripcion de ejemplo"
+            onChange={(event) => setDescription(event.target.value)}
+            className="form-control mb-3"
+          />
+          <button className="btn btn-primary">Crear tarea</button>
+        </form>
+      </div>
+    </div>
   );
 }
 
